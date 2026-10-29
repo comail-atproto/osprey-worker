@@ -28,6 +28,7 @@ jobs:
         with:
           files: .github/workflows/image.yml
       - run: shellcheck scripts/*.sh
+      - run: bash scripts/test-publish.sh
 
   dependency-review:
     if: github.event_name == 'pull_request'
