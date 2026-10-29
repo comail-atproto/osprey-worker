@@ -1,5 +1,5 @@
 variable "IMAGE" {
-  default = "ghcr.io/comail-atproto/osprey-worker:local"
+  default = "osprey-worker:local"
 }
 
 variable "BUILD_REVISION" {
@@ -43,6 +43,6 @@ target "worker" {
     "org.opencontainers.image.description" = "Osprey rule-evaluation worker with dependencies prepared for offline startup."
     "org.opencontainers.image.licenses" = "Apache-2.0"
     "org.opencontainers.image.revision" = BUILD_REVISION
-    "at.comail.upstream-revision" = UPSTREAM_REVISION
+    "upstream.revision" = UPSTREAM_REVISION
   }
 }
