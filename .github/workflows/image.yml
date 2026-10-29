@@ -1,0 +1,133 @@
+name: Build and publish worker
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: worker-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  IMAGE: ghcr.io/comail-atproto/osprey-worker:build-${{ github.sha }}
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: raven-actions/actionlint@3d39aea434753780c3b3d4a1a31c854b4dbf49d7 # v2
+        with:
+          files: .github/workflows/image.yml
+      - run: shellcheck scripts/*.sh
+
+  dependency-review:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/dependency-review-action@2031cfc080254a8a887f58cffee85186f0e49e48 # v4
+
+  build-and-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: ${{ github.event_name == 'pull_request' && 15 || 45 }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          submodules: true
+          persist-credentials: false
+      - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
+      - name: Select exact build sources
+        run: |
+          echo "BUILD_REVISION=$GITHUB_SHA" >> "$GITHUB_ENV"
+          echo "UPSTREAM_REVISION=$(git -C upstream rev-parse HEAD)" >> "$GITHUB_ENV"
+      - uses: docker/bake-action@5be5f02ff8819ecd3092ea6b2e6261c31774f2b4 # v6
+        with:
+          source: .
+          targets: worker
+          load: true
+          set: |
+            *.cache-from=type=gha,scope=osprey-worker
+            *.cache-to=type=gha,scope=osprey-worker,mode=max
+      - name: Check offline worker startup and image identity
+        run: bash scripts/smoke-test.sh "$IMAGE"
+      - name: Export the tested image for independent restore
+        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+        working-directory: ${{ runner.temp }}
+        run: |
+          docker save --output worker.tar "$IMAGE"
+          sha256sum worker.tar > worker.tar.sha256
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+        with:
+          name: worker-image-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/worker.tar
+            ${{ runner.temp }}/worker.tar.sha256
+          retention-days: 1
+          compression-level: 1
+          if-no-files-found: error
+
+  publish:
+    needs: [validate, build-and-test]
+    if: >-
+      github.repository == 'comail-atproto/osprey-worker' &&
+      github.ref == 'refs/heads/main' && github.event_name != 'pull_request' &&
+      vars.ENABLE_OSPREY_GHCR_PUBLISHER == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: release
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+      attestations: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          submodules: true
+          persist-credentials: false
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: worker-image-${{ github.sha }}
+          path: ${{ runner.temp }}
+      - name: Restore the exact tested image
+        working-directory: ${{ runner.temp }}
+        run: |
+          sha256sum --check worker.tar.sha256
+          docker load --input worker.tar
+      - name: Recheck offline startup after independent restore
+        run: bash scripts/smoke-test.sh "$IMAGE"
+      - uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ github.token }}
+      - name: Publish the restored image and retain provenance
+        id: publish
+        run: bash scripts/publish.sh
+      - uses: actions/attest-build-provenance@977bb373ede98d70efdf65b84cb5f73e068dcc2a # v3
+        with:
+          subject-name: ghcr.io/comail-atproto/osprey-worker
+          subject-digest: ${{ steps.publish.outputs.digest }}
+          push-to-registry: true
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: worker-provenance-${{ github.sha }}
+          path: ${{ runner.temp }}/provenance.json
+          retention-days: 90
+          if-no-files-found: error
