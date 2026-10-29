@@ -20,6 +20,8 @@ Kafka or PostgreSQL; deployments need their own integration tests.
 Dependabot opens weekly pull requests for the upstream submodule, Python base
 and GitHub Actions. Python stays on 3.11 because upstream's entrypoint selects
 that version; major or minor upgrades need a matching entrypoint change.
+Dependabot pull requests merge automatically after the required checks pass.
+Other pull requests still require maintainer approval.
 
 ## Releases
 
