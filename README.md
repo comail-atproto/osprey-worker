@@ -40,9 +40,10 @@ worker CLI with networking disabled to catch missing startup dependencies.
 - `Dockerfile` prepares the workspace packages and enables offline package resolution.
 
 Dependabot proposes weekly updates to the source, base image and GitHub Actions.
-Updates require review and passing CI. Before publishing, a fresh job restores
-the tested image and repeats the offline startup check. Each release records
-its source revisions, build inputs and a GitHub build attestation.
+Its pull requests are approved and merged automatically after all required
+checks pass. Before publishing, a fresh job restores the tested image and
+repeats the offline startup check. Each release records its source revisions,
+build inputs and a GitHub build attestation.
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for checks and release setup.
 
