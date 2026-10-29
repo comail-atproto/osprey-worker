@@ -47,6 +47,8 @@ jobs:
   build-and-test:
     runs-on: ubuntu-latest
     timeout-minutes: ${{ github.event_name == 'pull_request' && 15 || 45 }}
+    outputs:
+      image-artifact-id: ${{ steps.image-archive.outputs.artifact-id }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -74,6 +76,7 @@ jobs:
           docker save --output worker.tar "$IMAGE"
           sha256sum worker.tar > worker.tar.sha256
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        id: image-archive
         if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
         with:
           name: worker-image-${{ github.sha }}
@@ -94,6 +97,7 @@ jobs:
     timeout-minutes: 15
     environment: release
     permissions:
+      actions: write
       contents: read
       packages: write
       id-token: write
@@ -133,3 +137,8 @@ jobs:
           path: ${{ runner.temp }}/provenance.json
           retention-days: 90
           if-no-files-found: error
+      - name: Remove the published image handoff
+        env:
+          GH_TOKEN: ${{ github.token }}
+          IMAGE_ARTIFACT_ID: ${{ needs.build-and-test.outputs.image-artifact-id }}
+        run: gh api --method DELETE "repos/$GITHUB_REPOSITORY/actions/artifacts/$IMAGE_ARTIFACT_ID"
