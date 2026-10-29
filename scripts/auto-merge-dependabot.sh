@@ -19,6 +19,14 @@ pull_number=$(jq -er --arg head_sha "$head_sha" '
 ' <<< "$pull_requests")
 
 gh pr checks "$pull_number" --repo "$repository" --required
+merge_state=$(gh pr view "$pull_number" --repo "$repository" \
+  --json mergeStateStatus --jq '.mergeStateStatus')
+if [[ "$merge_state" == BEHIND ]]; then
+  gh api "repos/$repository/pulls/$pull_number/update-branch" \
+    --method PUT -f "expected_head_sha=$head_sha"
+  exit 0
+fi
+
 gh pr review "$pull_number" --repo "$repository" --approve
 gh pr merge "$pull_number" --repo "$repository" --auto --squash \
   --match-head-commit "$head_sha"
