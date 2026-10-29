@@ -38,6 +38,11 @@ repeats the smoke test before pushing the `build-<commit>` tag and attesting
 its digest. The workflow calls `scripts/publish.sh` to record the source and
 build-input hashes in its `worker-provenance-<commit>` artifact.
 
+After publication, attestation and provenance upload succeed, CI deletes only
+that run's temporary image archive. Failed publications retain it for one day;
+provenance remains available for 90 days and published images remain in GHCR.
+Rerun all jobs to rebuild the handoff when repeating a successful publication.
+
 Publishing uses the workflow's `GITHUB_TOKEN`. Disabling the repository variable
 stops future publications. Existing images remain available; consumers can
 select an earlier digest to undo an upgrade.
