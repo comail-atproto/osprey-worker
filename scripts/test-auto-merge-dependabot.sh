@@ -40,7 +40,8 @@ export MOCK_LOG="$test_dir/calls"
 bash "$script_dir/auto-merge-dependabot.sh" abc123
 diff -u <(printf '%s\n' \
   'pr review 7 --repo example/osprey-worker --approve' \
-  'pr merge 7 --repo example/osprey-worker --auto --squash --match-head-commit abc123') "$MOCK_LOG"
+  'pr merge 7 --repo example/osprey-worker --squash --match-head-commit abc123' \
+  'workflow run image.yml --repo example/osprey-worker --ref main') "$MOCK_LOG"
 
 : > "$MOCK_LOG"
 if MOCK_AUTHOR=someone bash "$script_dir/auto-merge-dependabot.sh" abc123 2>/dev/null; then

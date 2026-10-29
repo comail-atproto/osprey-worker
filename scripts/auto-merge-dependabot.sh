@@ -28,5 +28,6 @@ if [[ "$merge_state" == BEHIND ]]; then
 fi
 
 gh pr review "$pull_number" --repo "$repository" --approve
-gh pr merge "$pull_number" --repo "$repository" --auto --squash \
+gh pr merge "$pull_number" --repo "$repository" --squash \
   --match-head-commit "$head_sha"
+gh workflow run image.yml --repo "$repository" --ref main

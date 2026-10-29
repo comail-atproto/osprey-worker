@@ -9,7 +9,9 @@ Run the build and smoke test in [README.md](README.md), plus:
 
 ```sh
 shellcheck scripts/*.sh
-actionlint .github/workflows/image.yml
+actionlint .github/workflows/*.yml
+bash scripts/test-publish.sh
+bash scripts/test-auto-merge-dependabot.sh
 git diff --check
 ```
 
