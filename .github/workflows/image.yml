@@ -28,6 +28,7 @@ jobs:
         with:
           files: .github/workflows/image.yml
       - run: shellcheck scripts/*.sh
+      - run: bash scripts/test-publish.sh
 
   dependency-review:
     if: github.event_name == 'pull_request'
@@ -40,7 +41,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: actions/dependency-review-action@2031cfc080254a8a887f58cffee85186f0e49e48 # v4
+      - uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v4
 
   build-and-test:
     runs-on: ubuntu-latest
@@ -50,12 +51,12 @@ jobs:
         with:
           submodules: true
           persist-credentials: false
-      - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
       - name: Select exact build sources
         run: |
           echo "BUILD_REVISION=$GITHUB_SHA" >> "$GITHUB_ENV"
           echo "UPSTREAM_REVISION=$(git -C upstream rev-parse HEAD)" >> "$GITHUB_ENV"
-      - uses: docker/bake-action@5be5f02ff8819ecd3092ea6b2e6261c31774f2b4 # v6
+      - uses: docker/bake-action@59cb1203cd42bcefd40a1b6d73b589e48c86040e # v7.5.0
         with:
           source: .
           targets: worker
@@ -71,7 +72,7 @@ jobs:
         run: |
           docker save --output worker.tar "$IMAGE"
           sha256sum worker.tar > worker.tar.sha256
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
         with:
           name: worker-image-${{ github.sha }}
@@ -101,7 +102,7 @@ jobs:
         with:
           submodules: true
           persist-credentials: false
-      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: worker-image-${{ github.sha }}
           path: ${{ runner.temp }}
@@ -112,7 +113,7 @@ jobs:
           docker load --input worker.tar
       - name: Recheck offline startup after independent restore
         run: bash scripts/smoke-test.sh "$IMAGE"
-      - uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
+      - uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6 # v4.7.0
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
@@ -120,12 +121,12 @@ jobs:
       - name: Publish the restored image and retain provenance
         id: publish
         run: bash scripts/publish.sh
-      - uses: actions/attest-build-provenance@977bb373ede98d70efdf65b84cb5f73e068dcc2a # v3
+      - uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
         with:
           subject-name: ghcr.io/comail-atproto/osprey-worker
           subject-digest: ${{ steps.publish.outputs.digest }}
           push-to-registry: true
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: worker-provenance-${{ github.sha }}
           path: ${{ runner.temp }}/provenance.json

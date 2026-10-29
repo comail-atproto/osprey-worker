@@ -12,9 +12,11 @@ docker push "$image"
 digest=$(docker image inspect "$image" --format '{{json .RepoDigests}}' \
   | jq -er '.[] | select(startswith("ghcr.io/comail-atproto/osprey-worker@")) | split("@")[1]')
 [[ "$digest" =~ ^sha256:[0-9a-f]{64}$ ]]
+config_id=$(docker manifest inspect "$image" | jq -er '.config.digest')
+[[ "$config_id" =~ ^sha256:[0-9a-f]{64}$ ]]
 jq -n \
   --arg image "ghcr.io/comail-atproto/osprey-worker@$digest" \
-  --arg config_id "$(docker image inspect "$image" --format '{{.Id}}')" \
+  --arg config_id "$config_id" \
   --arg source_revision "$(git -C upstream rev-parse HEAD)" \
   --arg source_tree "$(git -C upstream rev-parse 'HEAD^{tree}')" \
   --arg recipe_sha256 "$(sha256sum upstream/osprey_worker/Dockerfile | awk '{print $1}')" \
