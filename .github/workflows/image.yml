@@ -29,6 +29,7 @@ jobs:
           files: .github/workflows/*.yml
       - run: shellcheck scripts/*.sh
       - run: bash scripts/test-publish.sh
+      - run: bash scripts/test-publish-eligibility.sh
       - run: bash scripts/test-auto-merge-dependabot.sh
 
   dependency-review:
@@ -87,12 +88,28 @@ jobs:
           compression-level: 1
           if-no-files-found: error
 
+  publish-eligibility:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      allowed: ${{ steps.check.outputs.allowed }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - id: check
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          ACTOR: ${{ github.actor }}
+        run: printf 'allowed=%s\n' "$(bash scripts/publish-eligibility.sh "$EVENT_NAME" "$ACTOR")" >> "$GITHUB_OUTPUT"
+
   publish:
-    needs: [validate, build-and-test]
+    needs: [validate, build-and-test, publish-eligibility]
     if: >-
       github.repository == 'comail-atproto/osprey-worker' &&
       github.ref == 'refs/heads/main' && github.event_name != 'pull_request' &&
-      vars.ENABLE_OSPREY_GHCR_PUBLISHER == 'true'
+      vars.ENABLE_OSPREY_GHCR_PUBLISHER == 'true' &&
+      needs.publish-eligibility.outputs.allowed == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     environment: release
