@@ -25,6 +25,7 @@ cd osprey-worker
 export BUILD_REVISION="$(git rev-parse HEAD)"
 export UPSTREAM_REVISION="$(git -C upstream rev-parse HEAD)"
 export IMAGE=osprey-worker:local
+export UPSTREAM_DOCKERFILE="$(cat upstream/osprey_worker/Dockerfile)"
 docker buildx bake --load worker
 bash scripts/smoke-test.sh "$IMAGE"
 ```
@@ -36,7 +37,7 @@ worker CLI with networking disabled to catch missing startup dependencies.
 
 - `upstream/` pins the original application source as a Git submodule.
 - `Dockerfile.python` pins the Python base image by digest.
-- `docker-bake.hcl` builds upstream's unchanged Dockerfile with that base.
+- `docker-bake.hcl` builds the pinned upstream recipe with the SSH client in place of the server package. It rejects unexpected changes to that install line.
 - `Dockerfile` prepares the workspace packages and enables offline package resolution.
 
 Dependabot proposes weekly updates to the source, base image and GitHub Actions.

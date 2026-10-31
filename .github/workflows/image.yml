@@ -28,6 +28,7 @@ jobs:
         with:
           files: .github/workflows/*.yml
       - run: shellcheck scripts/*.sh
+      - run: python3 -B -m unittest scripts/test_image_ssh_keys.py
       - run: bash scripts/test-publish.sh
       - run: bash scripts/test-publish-eligibility.sh
       - run: bash scripts/test-auto-merge-dependabot.sh
@@ -60,6 +61,20 @@ jobs:
         run: |
           echo "BUILD_REVISION=$GITHUB_SHA" >> "$GITHUB_ENV"
           echo "UPSTREAM_REVISION=$(git -C upstream rev-parse HEAD)" >> "$GITHUB_ENV"
+      - name: Check upstream recipe guard
+        run: bash scripts/test-upstream-recipe.sh
+      - name: Load the pinned upstream recipe
+        run: |
+          delimiter="UPSTREAM_DOCKERFILE_${GITHUB_RUN_ID}_${GITHUB_RUN_ATTEMPT}"
+          if grep -Fxq "$delimiter" upstream/osprey_worker/Dockerfile; then
+            echo "Unsafe Dockerfile delimiter." >&2
+            exit 1
+          fi
+          {
+            printf 'UPSTREAM_DOCKERFILE<<%s\n' "$delimiter"
+            cat upstream/osprey_worker/Dockerfile
+            printf '\n%s\n' "$delimiter"
+          } >> "$GITHUB_ENV"
       - uses: docker/bake-action@59cb1203cd42bcefd40a1b6d73b589e48c86040e # v7.5.0
         with:
           source: .
@@ -68,6 +83,8 @@ jobs:
           set: |
             *.cache-from=type=gha,scope=osprey-worker
             *.cache-to=type=gha,scope=osprey-worker,mode=max
+      - name: Check image layers for SSH host private keys
+        run: docker image save "$IMAGE" | python3 scripts/check-image-ssh-keys.py
       - name: Check offline worker startup and image identity
         run: bash scripts/smoke-test.sh "$IMAGE"
       - name: Export the tested image for independent restore

@@ -1,3 +1,11 @@
+variable "UPSTREAM_DOCKERFILE" {
+  default = ""
+  validation {
+    condition = length(split("wget ssh &&", UPSTREAM_DOCKERFILE)) == 2
+    error_message = "Expected exactly one upstream SSH package installation."
+  }
+}
+
 variable "IMAGE" {
   default = "osprey-worker:local"
 }
@@ -21,7 +29,7 @@ target "python" {
 
 target "upstream" {
   context = "upstream"
-  dockerfile = "osprey_worker/Dockerfile"
+  dockerfile-inline = replace(UPSTREAM_DOCKERFILE, "wget ssh &&", "wget openssh-client &&")
   contexts = {
     "python:3.11-slim" = "target:python"
   }
