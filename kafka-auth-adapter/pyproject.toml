@@ -8,7 +8,7 @@ version = "0.1.0"
 description = "Kafka authentication adapter for the Comail Osprey worker image"
 requires-python = ">=3.11"
 dependencies = [
-    "kafka-python==1.4.7",
+    "kafka-python==2.3.3",
     "osprey-worker==0.1.0",
     "pluggy==1.5.0",
 ]

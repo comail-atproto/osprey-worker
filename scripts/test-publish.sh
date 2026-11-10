@@ -18,6 +18,14 @@ case "$1 $2" in
       printf 'sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc\n'
     fi
     ;;
+  "run --rm")
+    case "$*" in
+      *"/osprey/uv.lock"*) printf "1111111111111111111111111111111111111111111111111111111111111111  /osprey/uv.lock\n" ;;
+      *"/usr/local/share/osprey-kafka.patch"*) printf "%s  /usr/local/share/osprey-kafka.patch\n" "${IMAGE_PATCH_HASH:-9999999999999999999999999999999999999999999999999999999999999999}" ;;
+      *"import kafka"*) printf "2.3.3\n" ;;
+      *) printf "unexpected docker run: %s\n" "$*" >&2; exit 1 ;;
+    esac
+    ;;
   "manifest inspect")
     printf '{"config":{"digest":"sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"}}\n'
     ;;
@@ -64,4 +72,13 @@ export RUNNER_TEMP="$test_dir"
 jq -e '
   .image == "ghcr.io/comail-atproto/osprey-worker@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
   and .config_id == "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+  and .lock_sha256 == "9999999999999999999999999999999999999999999999999999999999999999"
+  and .patch_sha256 == "9999999999999999999999999999999999999999999999999999999999999999"
+  and .effective_lock_sha256 == "1111111111111111111111111111111111111111111111111111111111111111"
+  and .kafka_python_version == "2.3.3"
 ' "$test_dir/provenance.json" >/dev/null
+
+if (cd "$repo_root" && IMAGE_PATCH_HASH=wrong bash scripts/publish.sh); then
+  echo 'A different image patch must prevent publication.' >&2
+  exit 1
+fi

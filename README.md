@@ -18,7 +18,9 @@ Check those integrations before upgrading; the image smoke test covers startup o
 ## Kafka authentication
 
 The image installs a separate Comail pluggy adapter. It uses Osprey's input
-and output hooks and leaves the pinned upstream package files unchanged.
+and output hooks. The image also applies a temporary upstream dependency patch
+to use kafka-python 2.3.3, which fixes security issues in the pinned 1.4.7 release.
+Remove the patch and its build and provenance checks when upstream ships a fixed release.
 
 For SASL/PLAIN input, set `OSPREY_INPUT_STREAM_SOURCE=plugin` and provide both
 `COMAIL_KAFKA_USERNAME` and `COMAIL_KAFKA_PASSWORD_FILE`. The password file
@@ -50,7 +52,8 @@ bash scripts/smoke-test.sh "$IMAGE"
 ```
 
 The test checks the image's architecture and source revisions, then starts the
-worker CLI with networking disabled to catch missing startup dependencies.
+worker CLI with networking disabled to catch missing startup dependencies. It also
+checks the applied patch, effective lockfile and installed Kafka version.
 
 ## How it is built
 
@@ -63,7 +66,9 @@ Dependabot proposes weekly updates to the source, base image and GitHub Actions.
 Its pull requests are approved and merged automatically after all required
 checks pass. Before publishing, a fresh job restores the tested image and
 repeats the offline startup check. Each release records its source revisions,
-build inputs and a GitHub build attestation.
+build inputs and a GitHub build attestation. Provenance records the original
+upstream lock hash separately from the patch hash and effective image lock hash,
+along with the installed kafka-python version.
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for checks and release setup.
 
