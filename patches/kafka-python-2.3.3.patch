@@ -1,0 +1,41 @@
+diff --git a/pyproject.toml b/pyproject.toml
+index 9fe0a60..0ed7a53 100644
+--- a/pyproject.toml
++++ b/pyproject.toml
+@@ -34,7 +34,7 @@ common = [
+     "gunicorn",
+     "intervals==0.9.2",
+     "jsonpath-rw",
+-    "kafka-python==1.4.7",
++    "kafka-python==2.3.3",
+     # Flask 1.1.4 / Jinja2 2.11 import `markupsafe.soft_unicode`, which was removed in
+     # markupsafe 2.1.0. Pin to <2.1 until the Flask 1.x stack is upgraded.
+     "markupsafe<2.1",
+diff --git a/uv.lock b/uv.lock
+index be592b4..56e2ad7 100644
+--- a/uv.lock
++++ b/uv.lock
+@@ -57,7 +57,7 @@ common = [
+     { name = "gunicorn", git = "https://github.com/discord/gunicorn.git?rev=979efdcb918daa536d8923668241c6e6bf1edb58" },
+     { name = "intervals", specifier = "==0.9.2" },
+     { name = "jsonpath-rw", git = "https://github.com/kennknowles/python-jsonpath-rw.git?rev=6f5647bb3ad2395c20f0191fef07a1df51c9fed8" },
+-    { name = "kafka-python", specifier = "==1.4.7" },
++    { name = "kafka-python", specifier = "==2.3.3" },
+     { name = "markupsafe", specifier = "<2.1" },
+     { name = "minio", specifier = ">=7.2.16" },
+     { name = "mmh3", specifier = "==3.0.0" },
+@@ -1173,11 +1173,11 @@ dependencies = [
+ 
+ [[package]]
+ name = "kafka-python"
+-version = "1.4.7"
++version = "2.3.3"
+ source = { registry = "https://pypi.org/simple" }
+-sdist = { url = "https://files.pythonhosted.org/packages/58/20/2a2494fe7b4bf4cb36c060f88a55adcd944b7876877691a2f28cd544467b/kafka-python-1.4.7.tar.gz", hash = "sha256:2f29baad4b3efe05a2bb81ac268855aa01cbc68397f15bac77b494ffd7e2cada", size = 290977, upload-time = "2019-09-30T21:13:20.078Z" }
++sdist = { url = "https://files.pythonhosted.org/packages/d1/a1/17a675cb1a4368a2b29070ed7386135d7db41b6ac5c8ab6f6876a4270ac6/kafka_python-2.3.3.tar.gz", hash = "sha256:c566a326161595d18e6a65069fb5cee8e389528529932b224ce57641ce49de1d", size = 358586, upload-time = "2026-10-26T17:48:40.847Z" }
+ wheels = [
+-    { url = "https://files.pythonhosted.org/packages/49/c9/9863483a1353700ba87821b4f39085eb18fd1bcbb1e954c697177d67f03f/kafka_python-1.4.7-py2.py3-none-any.whl", hash = "sha256:4fbebebfcb6fc94903fb720fe883d7bbec7298f4f1acb857c21dd3b4b114ba4b", size = 266121, upload-time = "2019-09-30T21:13:17.697Z" },
++    { url = "https://files.pythonhosted.org/packages/32/f3/1a4a5a60bf047c8c3786adf461977958852a1528c267e2ba659396552c39/kafka_python-2.3.3-py2.py3-none-any.whl", hash = "sha256:9ab1c473f0bc72c8db82ec77137f30691de42e68807a1933c3200b8771235ce1", size = 326619, upload-time = "2026-10-26T17:48:36.768Z" },
+ ]
+ 
+ [[package]]
