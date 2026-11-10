@@ -25,7 +25,8 @@ if [[ "$1 $2" == "pr checks" ]]; then
 fi
 
 if [[ "$1 $2" == "pr view" ]]; then
-  printf '%s\n' "${MOCK_MERGE_STATE:-BLOCKED}"
+  jq -n --arg state "${MOCK_MERGE_STATE:-BLOCKED}" \
+    '{mergeStateStatus: $state, title: "security(deps): update the vulnerable parser"}'
   exit 0
 fi
 
@@ -40,7 +41,7 @@ export MOCK_LOG="$test_dir/calls"
 bash "$script_dir/auto-merge-dependabot.sh" abc123
 diff -u <(printf '%s\n' \
   'pr review 7 --repo example/osprey-worker --approve' \
-  'pr merge 7 --repo example/osprey-worker --squash --match-head-commit abc123' \
+  'pr merge 7 --repo example/osprey-worker --squash --subject security(deps): update the vulnerable parser --match-head-commit abc123' \
   'workflow run image.yml --repo example/osprey-worker --ref main') "$MOCK_LOG"
 
 : > "$MOCK_LOG"

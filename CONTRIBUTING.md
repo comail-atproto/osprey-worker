@@ -26,6 +26,9 @@ that version; major or minor upgrades need a matching entrypoint change.
 Dependabot pull requests merge automatically after the required checks pass.
 Other pull requests still require maintainer approval.
 
+Automated merges use the checked PR title as the squash commit subject. Keep
+its Conventional Commit prefix so release notes can classify the update.
+
 ## Releases
 
 Publication runs from reviewed commits on `main`. Maintainers must link the
