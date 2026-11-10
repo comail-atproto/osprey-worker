@@ -19,15 +19,18 @@ pull_number=$(jq -er --arg head_sha "$head_sha" '
 ' <<< "$pull_requests")
 
 gh pr checks "$pull_number" --repo "$repository" --required
-merge_state=$(gh pr view "$pull_number" --repo "$repository" \
-  --json mergeStateStatus --jq '.mergeStateStatus')
+pull_request=$(gh pr view "$pull_number" --repo "$repository" \
+  --json mergeStateStatus,title)
+merge_state=$(jq -r '.mergeStateStatus' <<< "$pull_request")
 if [[ "$merge_state" == BEHIND ]]; then
   gh api "repos/$repository/pulls/$pull_number/update-branch" \
     --method PUT -f "expected_head_sha=$head_sha"
   exit 0
 fi
 
+title=$(jq -er '.title' <<< "$pull_request")
 gh pr review "$pull_number" --repo "$repository" --approve
 gh pr merge "$pull_number" --repo "$repository" --squash \
+  --subject "$title" \
   --match-head-commit "$head_sha"
 gh workflow run image.yml --repo "$repository" --ref main
