@@ -72,6 +72,25 @@ along with the installed kafka-python version.
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for checks and release setup.
 
+## Infra qualification handoff
+
+The `Request Infra Osprey qualification` workflow asks Infra to qualify a
+completed publisher run. It is off unless `COMAIL_OSPREY_PROMOTION_ENABLED` is
+`true`. It accepts a successful main push or dispatch only when the current main
+revision and all four publisher jobs match the completed run.
+
+Before enabling it, configure `COMAIL_UPDATER_APP_CLIENT_ID` and the protected
+`release` environment secret `COMAIL_UPDATER_APP_PRIVATE_KEY` for the Comail
+agents GitHub App. The app needs contents write permission on
+`comail-atproto/comail-infra` to send the repository dispatch. Infra separately
+verifies the publication and decides whether to prepare an update. This workflow
+does not select or deploy an image.
+
+The workflow runs `scripts/check_infra_handoff.py RUN_JSON JOBS_JSON MAIN_SHA`
+with the GitHub API responses and current main SHA. It exits nonzero if the
+publication or a required job does not match. Running it directly reads only the
+supplied files.
+
 ## License
 
 This packaging is under [Apache-2.0](LICENSE). The pinned

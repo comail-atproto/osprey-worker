@@ -28,7 +28,7 @@ jobs:
         with:
           files: .github/workflows/*.yml
       - run: shellcheck scripts/*.sh
-      - run: python3 -B -m unittest scripts/test_image_ssh_keys.py
+      - run: python3 -B -m unittest scripts/test_image_ssh_keys.py scripts/test_infra_handoff.py
       - run: bash scripts/test-publish.sh
       - run: bash scripts/test-publish-eligibility.sh
       - run: bash scripts/test-auto-merge-dependabot.sh

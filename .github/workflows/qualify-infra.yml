@@ -1,0 +1,58 @@
+name: Request Infra Osprey qualification
+
+on:
+  workflow_run:
+    workflows: [Build and publish worker]
+    types: [completed]
+    branches: [main]
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  request:
+    if: >-
+      github.ref == 'refs/heads/main' && vars.COMAIL_OSPREY_PROMOTION_ENABLED == 'true' &&
+      contains(fromJSON('["push", "workflow_dispatch"]'), github.event.workflow_run.event) &&
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.head_branch == 'main' &&
+      github.event.workflow_run.head_repository.full_name == 'comail-atproto/osprey-worker'
+    runs-on: ubuntu-latest
+    environment: release
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: main
+          persist-credentials: false
+      - name: Require successful publication
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SOURCE_RUN_ID: ${{ github.event.workflow_run.id }}
+        run: |
+          set -euo pipefail
+          [[ "$SOURCE_RUN_ID" =~ ^[1-9][0-9]*$ ]]
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$SOURCE_RUN_ID" > "$RUNNER_TEMP/source-run.json"
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$SOURCE_RUN_ID/jobs?filter=latest&per_page=100" > "$RUNNER_TEMP/source-jobs.json"
+          current=$(gh api "repos/$GITHUB_REPOSITORY/commits/main" --jq .sha)
+          python3 -B scripts/check_infra_handoff.py "$RUNNER_TEMP/source-run.json" "$RUNNER_TEMP/source-jobs.json" "$current"
+      - name: Mint a token scoped to Infra
+        id: infra
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          client-id: ${{ vars.COMAIL_UPDATER_APP_CLIENT_ID }}
+          private-key: ${{ secrets.COMAIL_UPDATER_APP_PRIVATE_KEY }}
+          owner: comail-atproto
+          repositories: comail-infra
+          permission-contents: write
+      - name: Request qualification of the completed publisher run
+        env:
+          GH_TOKEN: ${{ steps.infra.outputs.token }}
+          SOURCE_RUN_ID: ${{ github.event.workflow_run.id }}
+          APP_SLUG: ${{ steps.infra.outputs.app-slug }}
+        run: |
+          set -euo pipefail
+          [[ "$SOURCE_RUN_ID" =~ ^[1-9][0-9]*$ && "$APP_SLUG" == comail-agents ]]
+          jq -n --argjson run "$SOURCE_RUN_ID" '{event_type:"osprey-publication", client_payload:{source_run_id:$run}}' |
+            gh api --method POST repos/comail-atproto/comail-infra/dispatches --input -
