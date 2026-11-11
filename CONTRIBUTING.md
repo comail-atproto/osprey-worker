@@ -16,8 +16,13 @@ git diff --check
 ```
 
 Pull requests run these checks, dependency review and a native `linux/amd64`
-image build with the offline startup test. The test does not exercise rules,
-Kafka or PostgreSQL; deployments need their own integration tests.
+image build with an offline startup test and an OSV scan of the exported image.
+The `worker-vulnerability-report-<commit>` artifact contains the report,
+scan log, scanner version and image archive checksum. Findings are recorded
+for triage. Review extraction warnings in the log with the findings.
+Scanner failures block the build.
+The startup test does not exercise rules, Kafka or PostgreSQL; deployments
+need their own integration tests.
 Pushes to `source/**` run the same build checks without publishing an image.
 
 Dependabot opens weekly pull requests for the upstream submodule, Python base

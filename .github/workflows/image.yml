@@ -88,11 +88,25 @@ jobs:
       - name: Check offline worker startup and image identity
         run: bash scripts/smoke-test.sh "$IMAGE"
       - name: Export the tested image for independent restore
-        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
         working-directory: ${{ runner.temp }}
         run: |
           docker save --output worker.tar "$IMAGE"
           sha256sum worker.tar > worker.tar.sha256
+      - name: Scan the tested image for vulnerabilities
+        id: image-scan
+        timeout-minutes: 6
+        run: bash scripts/scan-image.sh "$RUNNER_TEMP"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: ${{ !cancelled() && (steps.image-scan.outcome == 'success' || steps.image-scan.outcome == 'failure') }}
+        with:
+          name: worker-vulnerability-report-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/worker-osv.json
+            ${{ runner.temp }}/worker-osv-version.txt
+            ${{ runner.temp }}/worker-osv.log
+            ${{ runner.temp }}/worker.tar.sha256
+          retention-days: 90
+          if-no-files-found: error
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         id: image-archive
         if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
