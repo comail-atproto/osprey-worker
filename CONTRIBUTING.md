@@ -25,6 +25,9 @@ The startup test does not exercise rules, Kafka or PostgreSQL; deployments
 need their own integration tests.
 Pushes to `source/**` run the same build checks without publishing an image.
 
+Worker images set `UV_NO_DEV=true` to exclude upstream's development dependency
+group from installation and offline startup.
+
 Dependabot opens weekly pull requests for the upstream submodule, Python base
 and GitHub Actions. Python stays on 3.11 because upstream's entrypoint selects
 that version; major or minor upgrades need a matching entrypoint change.
