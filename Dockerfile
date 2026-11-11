@@ -11,4 +11,6 @@ RUN uv pip install --offline --no-deps --no-build-isolation \
       /osprey/.venv/bin/python -m unittest discover \
       -s /tmp/comail-osprey-kafka-auth/tests -v \
     && rm -rf /tmp/comail-osprey-kafka-auth
+RUN apt-get purge -y git openssh-client gcc g++ cpp 'cpp-*' \
+      binutils 'binutils-*-linux-gnu'
 ENV UV_OFFLINE=true
