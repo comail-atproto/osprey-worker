@@ -15,7 +15,7 @@ The image contains the worker and its dependencies. Supply your own rules,
 configuration and services using the [upstream documentation](https://github.com/roostorg/osprey#readme).
 Check those integrations before upgrading; the image smoke test covers startup only.
 
-There's also some Kafka authentication stuff that you can read about here: [Configure Kafka authentication](docs/kafka-auth.md).
+There's also some Kafka authentication stuff that you can read about here: [Configure Kafka authentication](kafka-auth.md).
 
 ## Build locally
 
