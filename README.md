@@ -15,26 +15,7 @@ The image contains the worker and its dependencies. Supply your own rules,
 configuration and services using the [upstream documentation](https://github.com/roostorg/osprey#readme).
 Check those integrations before upgrading; the image smoke test covers startup only.
 
-## Kafka authentication
-
-The image installs a separate Comail pluggy adapter. It uses Osprey's input
-and output hooks. The image also applies a temporary upstream dependency patch
-to use kafka-python 2.3.3, which fixes security issues in the pinned 1.4.7 release.
-Remove the patch and its build and provenance checks when upstream ships a fixed release.
-
-For SASL/PLAIN input, set `OSPREY_INPUT_STREAM_SOURCE=plugin` and provide both
-`COMAIL_KAFKA_USERNAME` and `COMAIL_KAFKA_PASSWORD_FILE`. The password file
-must be mounted in the worker container and contain one non-empty UTF-8 line.
-The adapter reads the file at startup and removes one trailing LF or CRLF.
-A partial or invalid pair stops startup. If both variables are absent,
-the adapter lets the existing upstream input plugin handle the stream.
-SASL/PLAIN does not encrypt credentials; use it over an encrypted network.
-
-For authenticated output, set both credential variables, set
-`COMAIL_KAFKA_OUTPUT_SINK=true`, and set `OSPREY_KAFKA_OUTPUT_SINK=false`.
-This avoids starting a second, unauthenticated producer. The adapter uses the
-existing OSPREY topic, broker and client ID settings. When
-`COMAIL_KAFKA_OUTPUT_SINK` is unset, upstream continues to control output sinks.
+There's also some Kafka authentication stuff that you can read about here: [Configure Kafka authentication](kafka-auth.md).
 
 ## Build locally
 
